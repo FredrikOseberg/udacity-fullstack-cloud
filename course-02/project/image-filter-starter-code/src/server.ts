@@ -1,6 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import { validURI } from './util/validate';
 
 (async () => {
 
@@ -12,6 +13,27 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   
   // Use the body parser middleware for post requests
   app.use(bodyParser.json());
+
+  app.get("/filteredimage", async (req, res) => {
+    const { image_url } = req.query
+
+    if (!validURI(image_url)) {
+      return res.status(400).send("image_url must be present and formatted correctly")
+    }
+
+    let path: string
+    try {
+      console.log("Getting here")
+      path = await filterImageFromURL(image_url)
+    } catch (e) {
+      res.status(404).send("could not get image")
+    }
+
+    res.status(200).sendFile(path, (err) => {
+      deleteLocalFiles([path])
+    })
+    
+  })
 
   // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
   // GET /filteredimage?image_url={{URL}}
